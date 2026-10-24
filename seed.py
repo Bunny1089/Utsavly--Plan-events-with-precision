@@ -9,17 +9,18 @@ from backend.database import SessionLocal, Base, engine
 from backend.models import Event, BudgetItem, Task, Vendor, Idea
 from backend.services.ai_service import ai_service
 
-def seed_database():
+def seed_database(clear: bool = True):
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
-    # Clear existing data
-    db.query(Idea).delete()
-    db.query(Vendor).delete()
-    db.query(Task).delete()
-    db.query(BudgetItem).delete()
-    db.query(Event).delete()
-    db.commit()
+    if clear:
+        # Clear existing data
+        db.query(Idea).delete()
+        db.query(Vendor).delete()
+        db.query(Task).delete()
+        db.query(BudgetItem).delete()
+        db.query(Event).delete()
+        db.commit()
 
     now = datetime.now()
 
@@ -241,5 +242,19 @@ def seed_database():
     db.close()
     print("Seed complete! Created 3 realistic Indian demo events with budgets, tasks, vendors, and ideas.")
 
+def seed_if_empty():
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        count = db.query(Event).count()
+        if count == 0:
+            print("Events table is empty. Running seed on startup...")
+            seed_database(clear=False)
+            return True
+        return False
+    finally:
+        db.close()
+
 if __name__ == "__main__":
     seed_database()
+

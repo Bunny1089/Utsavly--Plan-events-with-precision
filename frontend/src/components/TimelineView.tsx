@@ -13,7 +13,8 @@ import {
   X
 } from "lucide-react";
 import type { Task, TaskStatus, TaskPriority, Event } from "../types";
-import { api } from "../services/api";
+import { api, API_BASE } from "../services/api";
+
 
 interface TimelineViewProps {
   event: Event;
@@ -78,7 +79,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     if (!taskTitle) return;
     setIsAdding(true);
     try {
-      await fetch(`http://localhost:8000/api/events/${event.id}/tasks`, {
+      await fetch(`${API_BASE}/events/${event.id}/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

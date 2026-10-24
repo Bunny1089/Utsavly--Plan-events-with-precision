@@ -135,3 +135,43 @@ pw/
 - **Lighthouse Desktop:** Accessibility **98**, Best Practices **100**, SEO **91**
 - **npm audit:** 0 vulnerabilities
 - **pip-audit:** 0 vulnerabilities
+
+---
+
+## 🚀 Free Deployment Guide
+
+Deploy Utsavly completely free on **Render** (Backend) and **Vercel** (Frontend):
+
+### 1. Deploy Backend to Render (Free Web Service)
+1. Fork or push this repository to GitHub.
+2. Sign in to [Render](https://render.com) and click **New +** $\rightarrow$ **Blueprint** (or connect repository directly).
+3. Select your repository. Render will automatically detect [`render.yaml`](file:///c:/Users/Meet/Desktop/pw/render.yaml):
+   - **Root Directory:** `backend`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - **Health Check Path:** `/api/health`
+4. Set Environment Variables in the Render dashboard:
+   - `AI_MOCK`: `true` (or `false` if using live Gemini)
+   - `GEMINI_API_KEY`: *(Optional)* Your Google Gemini API key
+   - `ALLOWED_ORIGINS`: `https://your-frontend.vercel.app,http://localhost:5173`
+   - `PYTHONPATH`: `..`
+5. On the first startup, Utsavly automatically seeds the demo celebrations if the database is empty.
+6. Note your Render URL (e.g. `https://utsavly-backend.onrender.com`). Verify it at `https://utsavly-backend.onrender.com/api/health` which returns `{"status":"ok"}`.
+
+### 2. Deploy Frontend to Vercel (Free Static / SPA)
+1. Sign in to [Vercel](https://vercel.com) and click **Add New Project**.
+2. Import your GitHub repository.
+3. Configure the project:
+   - **Framework Preset:** Vite
+   - **Root Directory:** `frontend`
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+4. Add the Environment Variable:
+   - `VITE_API_URL`: `https://utsavly-backend.onrender.com` (your Render backend URL)
+5. Click **Deploy**. Vercel will build the frontend and apply SPA routing rewrites automatically via [`frontend/vercel.json`](file:///c:/Users/Meet/Desktop/pw/frontend/vercel.json).
+
+### 3. Server Wake-up & Cold-Start UX
+Render free instances spin down after 15 minutes of inactivity:
+- Utsavly frontend automatically detects delays over 3 seconds and displays a clean **"Waking up the server..."** indicator with pulse animations.
+- The frontend automatically retries the initial event fetch with backoff, ensuring smooth entry without manual page refreshes.
+

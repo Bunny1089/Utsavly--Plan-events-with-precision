@@ -46,24 +46,49 @@ export function App() {
     }
   }, [isDark]);
 
-  // Load events on mount
-  const loadEvents = async () => {
+  const [isWakingServer, setIsWakingServer] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Show "Waking up the server..." state if first request takes longer than 3 seconds
+  useEffect(() => {
+    let timer: any = null;
+    if (loading) {
+      timer = setTimeout(() => {
+        setIsWakingServer(true);
+      }, 3000);
+    } else {
+      setIsWakingServer(false);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [loading]);
+
+  // Load events on mount with automatic retry while server boots
+  const loadEvents = async (retries = 3) => {
     try {
+      setLoadError(null);
       const data = await api.getEvents();
       setEvents(data);
       if (data.length > 0 && !activeEvent) {
         setActiveEvent(data[0]);
       }
-    } catch (err) {
-      console.error("Error loading events:", err);
-    } finally {
       setLoading(false);
+    } catch (err) {
+      console.warn("Error loading events (server may be waking up):", err);
+      if (retries > 0) {
+        setTimeout(() => loadEvents(retries - 1), 3000);
+      } else {
+        setLoadError("Unable to reach the server. It may still be booting.");
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     loadEvents();
   }, []);
+
 
   // Fetch all 4 pillars data when active event changes
   const loadActiveEventData = async () => {
@@ -163,16 +188,47 @@ export function App() {
               onEnterStudio={() => setCurrentTab("dashboard")}
             />
           ) : loading ? (
-            <SkeletonLoader label="Loading Utsavly Event Studio..." />
+            <div className="flex flex-col items-center justify-center py-12 px-4 space-y-4">
+              <SkeletonLoader
+                label={isWakingServer ? "Waking up the server... (Free tier instance spinning up)" : "Loading Utsavly Event Studio..."}
+              />
+              {isWakingServer && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-xs font-semibold tracking-wide bg-[var(--surface-2)] text-[var(--accent)] border border-[var(--border)] shadow-lg animate-pulse"
+                >
+                  <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-ping" />
+                  <span>Waking up the server... Free hosting instances can take a few moments to spin up.</span>
+                </div>
+              )}
+            </div>
           ) : !activeEvent ? (
-            <EmptyState
-              icon={Sparkles}
-              title="No Events Found"
-              description="Welcome to Utsavly! Let's get started by creating your first celebration plan with our GenAI setup wizard."
-              actionLabel="Launch Setup Wizard"
-              onAction={() => setIsWizardOpen(true)}
-            />
+            <div className="space-y-4">
+              {loadError && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm flex items-center justify-between">
+                  <span>{loadError}</span>
+                  <button
+                    onClick={() => {
+                      setLoading(true);
+                      loadEvents();
+                    }}
+                    className="px-3 py-1 bg-amber-500 text-black font-semibold rounded-lg text-xs hover:bg-amber-400 transition-colors"
+                  >
+                    Retry Connection
+                  </button>
+                </div>
+              )}
+              <EmptyState
+                icon={Sparkles}
+                title="No Events Found"
+                description="Welcome to Utsavly! Let's get started by creating your first celebration plan with our GenAI setup wizard."
+                actionLabel="Launch Setup Wizard"
+                onAction={() => setIsWizardOpen(true)}
+              />
+            </div>
           ) : (
+
             <div>
               {currentTab === "dashboard" && (
                 <DashboardView

@@ -10,7 +10,11 @@ import type {
   CopilotResponse
 } from "../types";
 
-const API_BASE = "http://localhost:8000/api";
+const rawBase = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:8000";
+export const API_BASE = rawBase.replace(/\/+$/, "").endsWith("/api")
+  ? rawBase.replace(/\/+$/, "")
+  : `${rawBase.replace(/\/+$/, "")}/api`;
+
 
 export const api = {
   // Events
