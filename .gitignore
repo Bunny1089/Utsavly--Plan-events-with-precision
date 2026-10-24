@@ -32,4 +32,7 @@ brag-output/
 brag-output*/
 .agents/
 skills-lock.json
+*.mp4
+*.webm
+
 
